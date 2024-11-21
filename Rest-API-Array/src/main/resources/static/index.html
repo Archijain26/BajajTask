@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12345</title> <!-- Change this to your roll number -->
+    <style>
+        /* Add some styling for a clean UI */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f9;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #output {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            white-space: pre-wrap; /* To show JSON in formatted way */
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Data Processor</h1>
+
+<textarea id="jsonInput" placeholder='Enter JSON here'></textarea><br>
+<button onclick="submitJSON()">Submit</button>
+
+<!-- Multi-Select Dropdown that appears after valid JSON submission -->
+<select id="filterOptions" multiple style="display: none;">
+    <option value="alphabets">Alphabets</option>
+    <option value="numbers">Numbers</option>
+    <option value="highest">Highest Lowercase</option>
+</select>
+
+<!-- Area to display results -->
+<div id="output"></div>
+<div id="errorMessage" class="error" style="display: none;"></div>
+
+<script>
+    // Function to validate and submit the JSON
+    async function submitJSON() {
+        const jsonInput = document.getElementById('jsonInput').value;
+        const errorMessage = document.getElementById('errorMessage');
+        const filterOptions = document.getElementById('filterOptions');
+        const output = document.getElementById('output');
+
+        // Hide the previous error message and output
+        errorMessage.style.display = 'none';
+        output.style.display = 'none';
+        filterOptions.style.display = 'none';
+
+        try {
+            // Validate JSON input
+            const parsedData = JSON.parse(jsonInput);
+
+            // Show filter options after valid JSON input
+            filterOptions.style.display = 'block';
+
+            // Send the valid JSON to the backend (assuming the endpoint is "/bfhl")
+            const response = await fetch('/bfhl', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(parsedData)
+            });
+            const data = await response.json();
+            renderResponse(data);
+        } catch (error) {
+            // If the JSON is invalid, show error message
+            errorMessage.style.display = 'block';
+            errorMessage.innerText = 'Invalid JSON. Please correct it and try again.';
+        }
+    }
+
+    // Function to render the filtered response
+    function renderResponse(data) {
+        const selectedFilters = Array.from(document.getElementById('filterOptions').selectedOptions)
+            .map(option => option.value);
+        const result = {};
+
+        if (selectedFilters.includes('numbers')) result.numbers = data.numbers;
+        if (selectedFilters.includes('alphabets')) result.alphabets = data.alphabets;
+        if (selectedFilters.includes('highest')) result.highest = data.highestLowercaseAlphabet;
+
+        const output = document.getElementById('output');
+        output.style.display = 'block';
+        output.innerText = JSON.stringify(result, null, 2); // Pretty print JSON
+
+        if (!Object.keys(result).length) {
+            output.innerText = 'No data to display based on the selected filters.';
+        }
+    }
+</script>
+
+</body>
+</html>
